@@ -52,7 +52,14 @@ class Marketplace:
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
         
-        pass
+        if (len(self.producers[int(producer_id)]) == self.queue_size_per_producer):
+            return False
+
+        self.producers[int(producer_id)].append(product)
+
+        self.products[product] = producer_id
+        
+        return True
 
     def new_cart(self):
         """
