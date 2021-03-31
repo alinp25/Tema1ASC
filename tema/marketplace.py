@@ -5,6 +5,7 @@ Computer Systems Architecture Course
 Assignment 1
 March 2021
 """
+import ..locks
 
 
 class Marketplace:
@@ -19,13 +20,24 @@ class Marketplace:
         :type queue_size_per_producer: Int
         :param queue_size_per_producer: the maximum size of a queue associated with each producer
         """
-        pass
+        self.queue_size_per_producer = queue_size_per_producer
+        self.products = {} 
+        self.producers = {}
+        self.consumers_carts = {}
 
     def register_producer(self):
         """
         Returns an id for the producer that calls this.
         """
-        pass
+        locks.producer_registration_lock.acquire()
+
+        new_producer_id = len(self.producers)
+
+        self.producers[new_producer_id] = []
+
+        locks.producer_registration_lock.release()
+
+        return new_producer_id
 
     def publish(self, producer_id, product):
         """
@@ -39,6 +51,7 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
+        
         pass
 
     def new_cart(self):
@@ -47,7 +60,15 @@ class Marketplace:
 
         :returns an int representing the cart_id
         """
-        pass
+        locks.consumer_cart_creation_lock.acquire()
+
+        new_cart_id = len(self.consumers_carts)
+
+        self.consumers_carts[new_cart_id] = []
+
+        locks.consumer_cart_creation_lock.release()
+
+        return new_cart_id
 
     def add_to_cart(self, cart_id, product):
         """
