@@ -44,15 +44,17 @@ class Consumer(Thread):
 
             for op in cart:
                 no_ops = 0
+
+                # Extract the operation details
                 qty = op["quantity"]
                 op_type = op["type"]
                 prod = op["product"]
 
+                # If the operation is successful (the product is available)
+                # then proceed to the next operation, otherwise wait for the
+                # product to become available
                 while no_ops < qty:
-                    if op_type == "add":
-                        result = self.marketplace.add_to_cart(cart_id, prod)
-                    elif op_type == "remove":
-                        result = self.marketplace.remove_from_cart(cart_id, prod)
+                    result = self.execute_operation(cart_id, op_type, prod)
 
                     if result is None or result:
                         no_ops += 1
@@ -60,3 +62,12 @@ class Consumer(Thread):
                         time.sleep(self.retry_wait_time)
 
             self.marketplace.place_order(cart_id)
+
+    def execute_operation(self, cart_id, operation_type, product) -> bool:
+        if operation_type == "add":
+            return self.marketplace.add_to_cart(cart_id, product)
+
+        if operation_type == "remove":
+            return self.marketplace.remove_from_cart(cart_id, product)
+
+        return False

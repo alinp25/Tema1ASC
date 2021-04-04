@@ -23,10 +23,12 @@ class Marketplace:
         """
 
         self.queue_size_per_producer = queue_size_per_producer
-        self.products_mapping = {}
-        self.producers_queues = []
-        self.consumers_carts = {}
-        self.available_products = []
+        self.products_mapping = {}  # maps the product to the producer
+        self.producers_queues = []  # holds the queue count for each producer
+        self.consumers_carts = {}  # holds the consumers carts
+        self.available_products = []  # contains the available products
+        # Number of carts required to be stored separately for thread-safety in
+        # new carts creation
         self.no_carts = 0
 
         self.consumer_cart_creation_lock = Lock()
@@ -72,8 +74,6 @@ class Marketplace:
         :returns an int representing the cart_id
         """
         with self.consumer_cart_creation_lock:
-
-            # new_cart_id = len(self.consumers_carts)
             self.no_carts += 1
 
             self.consumers_carts[self.no_carts] = []
