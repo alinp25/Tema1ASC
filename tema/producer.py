@@ -39,7 +39,7 @@ class Producer(Thread):
         self.republish_wait_time = republish_wait_time
 
         # Generate the producer's id
-        self.id = self.marketplace.register_producer()
+        self.producer_id = self.marketplace.register_producer()
 
     def run(self):
         # Continuously generate products that are placed in the marketplace
@@ -54,7 +54,16 @@ class Producer(Thread):
                         no_prod += 1
 
     def publish_product(self, product, publish_wait_time) -> bool:
-        result = self.marketplace.publish(self.id, product)
+        """
+        Publish product to marketplace.
+
+        @type product: Product
+        @param product: the product to be published to the marketplace
+
+        @type publish_wait_time: float
+        @param publish_wait_time: the wait time needed for the product to be published
+        """
+        result = self.marketplace.publish(self.producer_id, product)
 
         # If the publish was successful start move to the next product, otherwise
         # wait until the queue gets freed and the publish is available to happen

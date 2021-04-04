@@ -42,13 +42,13 @@ class Consumer(Thread):
         for cart in self.carts:
             cart_id = self.marketplace.new_cart()
 
-            for op in cart:
+            for operation in cart:
                 no_ops = 0
 
                 # Extract the operation details
-                qty = op["quantity"]
-                op_type = op["type"]
-                prod = op["product"]
+                qty = operation["quantity"]
+                op_type = operation["type"]
+                prod = operation["product"]
 
                 # If the operation is successful (the product is available)
                 # then proceed to the next operation, otherwise wait for the
@@ -64,6 +64,18 @@ class Consumer(Thread):
             self.marketplace.place_order(cart_id)
 
     def execute_operation(self, cart_id, operation_type, product) -> bool:
+        """
+        Execute operation on the given cart.
+
+        @type cart_id: number
+        @param cart_id: the cart's id
+
+        @type operation_type: string
+        @param operation_type: the type of operation to be executed (either add or remove)
+
+        @type product: Product
+        @param product: product to be manipulated in the operation
+        """
         if operation_type == "add":
             return self.marketplace.add_to_cart(cart_id, product)
 
