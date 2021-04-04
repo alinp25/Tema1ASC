@@ -5,7 +5,8 @@ Computer Systems Architecture Course
 Assignment 1
 March 2021
 """
-import ..locks
+
+from threading import Lock, currentThread
 
 
 class Marketplace:
@@ -20,22 +21,24 @@ class Marketplace:
         :type queue_size_per_producer: Int
         :param queue_size_per_producer: the maximum size of a queue associated with each producer
         """
+
         self.queue_size_per_producer = queue_size_per_producer
-        self.products = {} 
-        self.producers = {}
+        self.products_mapping = {}
+        self.producers_queues = []
         self.consumers_carts = {}
+        self.available_products = []
+        self.no_carts = 0
+
+        self.consumer_cart_creation_lock = Lock()
+        self.cart_operation_lock = Lock()
 
     def register_producer(self):
         """
         Returns an id for the producer that calls this.
         """
-        locks.producer_registration_lock.acquire()
+        new_producer_id = len(self.producers_queues)
 
-        new_producer_id = len(self.producers)
-
-        self.producers[new_producer_id] = []
-
-        locks.producer_registration_lock.release()
+        self.producers_queues.append(0)
 
         return new_producer_id
 
@@ -51,14 +54,15 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
-        
-        if (len(self.producers[int(producer_id)]) == self.queue_size_per_producer):
+
+        if self.producers_queues[producer_id] >= self.queue_size_per_producer:
             return False
 
-        self.producers[int(producer_id)].append(product)
+        self.producers_queues[producer_id] += 1
+        self.available_products.append(product)
 
-        self.products[product] = producer_id
-        
+        self.products_mapping[product] = producer_id
+
         return True
 
     def new_cart(self):
@@ -67,15 +71,14 @@ class Marketplace:
 
         :returns an int representing the cart_id
         """
-        locks.consumer_cart_creation_lock.acquire()
+        with self.consumer_cart_creation_lock:
 
-        new_cart_id = len(self.consumers_carts)
+            # new_cart_id = len(self.consumers_carts)
+            self.no_carts += 1
 
-        self.consumers_carts[new_cart_id] = []
+            self.consumers_carts[self.no_carts] = []
 
-        locks.consumer_cart_creation_lock.release()
-
-        return new_cart_id
+            return self.no_carts
 
     def add_to_cart(self, cart_id, product):
         """
@@ -89,7 +92,18 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
-        pass
+        with self.cart_operation_lock:
+            if product not in self.available_products:
+                return False
+
+            producer_id = self.products_mapping[product]
+            self.producers_queues[producer_id] -= 1
+
+            self.available_products.remove(product)
+
+            self.consumers_carts[cart_id].append(product)
+
+            return True
 
     def remove_from_cart(self, cart_id, product):
         """
@@ -101,7 +115,14 @@ class Marketplace:
         :type product: Product
         :param product: the product to remove from cart
         """
-        pass
+
+        self.consumers_carts[cart_id].remove(product)
+        self.available_products.append(product)
+
+        with self.cart_operation_lock:
+
+            producer_id = self.products_mapping[product]
+            self.producers_queues[producer_id] += 1
 
     def place_order(self, cart_id):
         """
@@ -110,4 +131,9 @@ class Marketplace:
         :type cart_id: Int
         :param cart_id: id cart
         """
-        pass
+        products = self.consumers_carts.pop(cart_id, None)
+
+        for product in products:
+            print(currentThread().getName() + " bought " + str(product))
+
+        return products
